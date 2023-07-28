@@ -1,6 +1,5 @@
 package com.ecore.roles.web.rest;
 
-import com.ecore.roles.model.Role;
 import com.ecore.roles.service.RolesService;
 import com.ecore.roles.web.RolesApi;
 import com.ecore.roles.web.dto.RoleDto;
@@ -9,11 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import static com.ecore.roles.web.dto.RoleDto.fromModel;
+import static com.ecore.roles.web.dto.RoleDto.fromModelList;
 
 @RequiredArgsConstructor
 @RestController
@@ -29,31 +28,33 @@ public class RolesRestController implements RolesApi {
     public ResponseEntity<RoleDto> createRole(
             @Valid @RequestBody RoleDto role) {
         return ResponseEntity
-                .status(200)
+                .status(201)
                 .body(fromModel(rolesService.createRole(role.toModel())));
     }
 
     @Override
-    @PostMapping(
+    @GetMapping(
+            path = "/search",
             produces = {"application/json"})
-    public ResponseEntity<List<RoleDto>> getRoles() {
-
-        List<Role> getRoles = rolesService.getRoles();
-
-        List<RoleDto> roleDtoList = new ArrayList<>();
-
-        for (Role role : getRoles) {
-            RoleDto roleDto = fromModel(role);
-            roleDtoList.add(roleDto);
-        }
-
+    public ResponseEntity<RoleDto> getRole(
+            @RequestParam UUID teamMemberId,
+            @RequestParam UUID teamId) {
         return ResponseEntity
                 .status(200)
-                .body(roleDtoList);
+                .body(fromModel(rolesService.getRole(teamMemberId, teamId)));
     }
 
     @Override
-    @PostMapping(
+    @GetMapping(
+            produces = {"application/json"})
+    public ResponseEntity<List<RoleDto>> getRoles() {
+        return ResponseEntity
+                .status(200)
+                .body(fromModelList(rolesService.getRoles()));
+    }
+
+    @Override
+    @GetMapping(
             path = "/{roleId}",
             produces = {"application/json"})
     public ResponseEntity<RoleDto> getRole(

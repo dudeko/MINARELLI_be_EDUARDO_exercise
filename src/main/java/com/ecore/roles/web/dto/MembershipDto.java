@@ -12,7 +12,9 @@ import lombok.Setter;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static java.util.Optional.ofNullable;
 
@@ -55,6 +57,10 @@ public class MembershipDto {
                 .userId(membership.getUserId())
                 .teamId(membership.getTeamId())
                 .build();
+    }
+
+    public static List<MembershipDto> fromModelList(List<Membership> membershipList) {
+        return membershipList.stream().map(MembershipDto::fromModel).collect(Collectors.toList());
     }
 
     public Membership toModel() {

@@ -13,4 +13,5 @@ public interface RolesService {
 
     List<Role> getRoles();
 
+    Role getRole(UUID userId, UUID teamId);
 }

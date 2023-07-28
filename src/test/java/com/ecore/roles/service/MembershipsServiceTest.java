@@ -2,6 +2,8 @@ package com.ecore.roles.service;
 
 import com.ecore.roles.exception.InvalidArgumentException;
 import com.ecore.roles.exception.ResourceExistsException;
+import com.ecore.roles.exception.ResourceNotFoundException;
+import com.ecore.roles.exception.UserIsNotAssignedToMembershipException;
 import com.ecore.roles.model.Membership;
 import com.ecore.roles.repository.MembershipRepository;
 import com.ecore.roles.repository.RoleRepository;
@@ -14,15 +16,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
-import static com.ecore.roles.utils.TestData.DEFAULT_MEMBERSHIP;
-import static com.ecore.roles.utils.TestData.DEVELOPER_ROLE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static com.ecore.roles.utils.TestData.*;
+import static java.lang.String.format;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MembershipsServiceTest {
@@ -39,7 +37,7 @@ class MembershipsServiceTest {
     private TeamsService teamsService;
 
     @Test
-    void shouldCreateMembership() {
+    void shouldCreateMembership() throws UserIsNotAssignedToMembershipException {
         Membership expectedMembership = DEFAULT_MEMBERSHIP();
         when(roleRepository.findById(expectedMembership.getRole().getId()))
                 .thenReturn(Optional.ofNullable(DEVELOPER_ROLE()));
@@ -49,6 +47,12 @@ class MembershipsServiceTest {
         when(membershipRepository
                 .save(expectedMembership))
                         .thenReturn(expectedMembership);
+        when(usersService
+                .getUser(expectedMembership.getUserId()))
+                        .thenReturn(GIANNI_USER());
+        when(teamsService
+                .getTeam(expectedMembership.getTeamId()))
+                        .thenReturn(ORDINARY_CORAL_LYNX_TEAM());
 
         Membership actualMembership = membershipsService.assignRoleToMembership(expectedMembership);
 
@@ -92,6 +96,42 @@ class MembershipsServiceTest {
         verify(roleRepository, times(0)).getById(any());
         verify(usersService, times(0)).getUser(any());
         verify(teamsService, times(0)).getTeam(any());
+    }
+
+    @Test
+    void shouldFailToCreateMembershipWhenItHasInvalidTeam() {
+        Membership expectedMembership = DEFAULT_MEMBERSHIP();
+        expectedMembership.setTeamId(UUID_1);
+
+        when(usersService
+                .getUser(expectedMembership.getUserId()))
+                        .thenReturn(GIANNI_USER());
+        when(teamsService.getTeam(expectedMembership.getTeamId()))
+                .thenReturn(null);
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> membershipsService.assignRoleToMembership(expectedMembership));
+
+        assertEquals(format("Team %s not found", expectedMembership.getTeamId()), exception.getMessage());
+        verify(roleRepository, times(0)).getById(any());
+        verify(membershipRepository, times(0)).save(any());
+    }
+
+    @Test
+    void shouldFailToCreateMembershipWhenItHasInvalidUser() {
+        Membership expectedMembership = DEFAULT_MEMBERSHIP();
+        expectedMembership.setUserId(UUID_1);
+
+        when(usersService
+                .getUser(expectedMembership.getUserId()))
+                        .thenReturn(null);
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> membershipsService.assignRoleToMembership(expectedMembership));
+
+        assertEquals(format("User %s not found", expectedMembership.getUserId()), exception.getMessage());
+        verify(roleRepository, times(0)).getById(any());
+        verify(membershipRepository, times(0)).save(any());
     }
 
     @Test

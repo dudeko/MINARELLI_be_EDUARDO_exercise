@@ -12,6 +12,7 @@ import lombok.Setter;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -45,5 +46,9 @@ public class TeamDto {
                 .teamLeadId(team.getTeamLeadId())
                 .teamMemberIds(team.getTeamMemberIds())
                 .build();
+    }
+
+    public static List<TeamDto> fromModelList(List<Team> teamList) {
+        return teamList.stream().map(TeamDto::fromModel).collect(Collectors.toList());
     }
 }
