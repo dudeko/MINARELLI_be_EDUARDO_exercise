@@ -9,8 +9,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.Id;
+import javax.persistence.Transient;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,4 +36,19 @@ public class Team {
 
     @JsonProperty
     private List<UUID> teamMemberIds;
+
+    public boolean hasMemberOrTeamLead(UUID userId) {
+        return getTeamMembersAndTeamLead()
+                .contains(userId);
+    }
+
+    public boolean doesNotHaveMemberOrTeamLead(UUID userId) {
+        return !this.hasMemberOrTeamLead(userId);
+    }
+
+    @Transient
+    private Set<UUID> getTeamMembersAndTeamLead() {
+        return Stream.concat(getTeamMemberIds().stream(), Stream.of(getTeamLeadId()))
+                .collect(Collectors.toSet());
+    }
 }

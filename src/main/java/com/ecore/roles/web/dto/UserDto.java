@@ -10,7 +10,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -53,5 +55,9 @@ public class UserDto {
                 .avatarUrl(user.getAvatarUrl())
                 .location(user.getLocation())
                 .build();
+    }
+
+    public static List<UserDto> fromModelList(List<User> users) {
+        return users.stream().map(UserDto::fromModel).collect(Collectors.toList());
     }
 }

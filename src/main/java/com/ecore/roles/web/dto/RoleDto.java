@@ -10,7 +10,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.validation.constraints.NotBlank;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -34,6 +36,10 @@ public class RoleDto {
                 .id(role.getId())
                 .name(role.getName())
                 .build();
+    }
+
+    public static List<RoleDto> fromModelList(List<Role> roles) {
+        return roles.stream().map(RoleDto::fromModel).collect(Collectors.toList());
     }
 
     public Role toModel() {

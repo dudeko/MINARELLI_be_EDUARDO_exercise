@@ -6,14 +6,20 @@ import com.ecore.roles.web.MembershipsApi;
 import com.ecore.roles.web.dto.MembershipDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import static com.ecore.roles.web.dto.MembershipDto.fromModel;
+import static com.ecore.roles.web.dto.MembershipDto.fromModelList;
 
 @RequiredArgsConstructor
 @RestController
@@ -30,29 +36,19 @@ public class MembershipsRestController implements MembershipsApi {
             @NotNull @Valid @RequestBody MembershipDto membershipDto) {
         Membership membership = membershipsService.assignRoleToMembership(membershipDto.toModel());
         return ResponseEntity
-                .status(200)
+                .status(201)
                 .body(fromModel(membership));
     }
 
     @Override
-    @PostMapping(
+    @GetMapping(
             path = "/search",
             produces = {"application/json"})
     public ResponseEntity<List<MembershipDto>> getMemberships(
             @RequestParam UUID roleId) {
-
-        List<Membership> memberships = membershipsService.getMemberships(roleId);
-
-        List<MembershipDto> newMembershipDto = new ArrayList<>();
-
-        for (Membership membership : memberships) {
-            MembershipDto membershipDto = fromModel(membership);
-            newMembershipDto.add(membershipDto);
-        }
-
         return ResponseEntity
                 .status(200)
-                .body(newMembershipDto);
+                .body(fromModelList(membershipsService.getMemberships(roleId)));
     }
 
 }

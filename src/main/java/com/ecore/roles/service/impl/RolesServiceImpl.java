@@ -2,8 +2,8 @@ package com.ecore.roles.service.impl;
 
 import com.ecore.roles.exception.ResourceExistsException;
 import com.ecore.roles.exception.ResourceNotFoundException;
+import com.ecore.roles.model.Membership;
 import com.ecore.roles.model.Role;
-import com.ecore.roles.repository.MembershipRepository;
 import com.ecore.roles.repository.RoleRepository;
 import com.ecore.roles.service.MembershipsService;
 import com.ecore.roles.service.RolesService;
@@ -19,43 +19,44 @@ import java.util.UUID;
 @Service
 public class RolesServiceImpl implements RolesService {
 
-    public static final String DEFAULT_ROLE = "Developer";
-
     private final RoleRepository roleRepository;
-    private final MembershipRepository membershipRepository;
     private final MembershipsService membershipsService;
 
     @Autowired
     public RolesServiceImpl(
             RoleRepository roleRepository,
-            MembershipRepository membershipRepository,
             MembershipsService membershipsService) {
         this.roleRepository = roleRepository;
-        this.membershipRepository = membershipRepository;
         this.membershipsService = membershipsService;
     }
 
     @Override
-    public Role CreateRole(@NonNull Role r) {
-        if (roleRepository.findByName(r.getName()).isPresent()) {
+    public Role createRole(@NonNull Role role) {
+        validateRoleWithSameNameDoesNotExist(role.getName());
+        return roleRepository.save(role);
+    }
+
+    private void validateRoleWithSameNameDoesNotExist(String name) {
+        if (roleRepository.findByName(name).isPresent()) {
             throw new ResourceExistsException(Role.class);
         }
-        return roleRepository.save(r);
     }
 
     @Override
-    public Role GetRole(@NonNull UUID rid) {
-        return roleRepository.findById(rid)
-                .orElseThrow(() -> new ResourceNotFoundException(Role.class, rid));
+    public Role getRole(@NonNull UUID roleId) {
+        return roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException(Role.class, roleId));
     }
 
     @Override
-    public List<Role> GetRoles() {
+    public List<Role> getRoles() {
         return roleRepository.findAll();
     }
 
-    private Role getDefaultRole() {
-        return roleRepository.findByName(DEFAULT_ROLE)
-                .orElseThrow(() -> new IllegalStateException("Default role is not configured"));
+    @Override
+    public Role getRole(@NonNull UUID userId, @NonNull UUID teamId) {
+        return membershipsService.findByUserIdAndTeamId(userId, teamId)
+                .map(Membership::getRole)
+                .orElse(null);
     }
 }

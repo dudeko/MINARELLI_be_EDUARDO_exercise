@@ -5,16 +5,16 @@ import com.ecore.roles.web.UsersApi;
 import com.ecore.roles.web.dto.UserDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static com.ecore.roles.web.dto.UserDto.fromModel;
+import static com.ecore.roles.web.dto.UserDto.fromModelList;
 
 @RequiredArgsConstructor
 @RestController
@@ -24,18 +24,16 @@ public class UsersRestController implements UsersApi {
     private final UsersService usersService;
 
     @Override
-    @PostMapping(
+    @GetMapping(
             produces = {"application/json"})
     public ResponseEntity<List<UserDto>> getUsers() {
         return ResponseEntity
                 .status(200)
-                .body(usersService.getUsers().stream()
-                        .map(UserDto::fromModel)
-                        .collect(Collectors.toList()));
+                .body(fromModelList(usersService.getUsers()));
     }
 
     @Override
-    @PostMapping(
+    @GetMapping(
             path = "/{userId}",
             produces = {"application/json"})
     public ResponseEntity<UserDto> getUser(
