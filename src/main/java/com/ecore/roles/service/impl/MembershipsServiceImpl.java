@@ -75,7 +75,7 @@ public class MembershipsServiceImpl implements MembershipsService {
 
     private void validateUserIsAssignedToMembership(Membership membership) {
         if (teamsService.getTeam(membership.getTeamId())
-                .doesNotHaveMember(membership.getUserId())) {
+                .doesNotHaveMemberOrTeamLead(membership.getUserId())) {
             throw new UserIsNotAssignedToMembershipException();
         }
     }
