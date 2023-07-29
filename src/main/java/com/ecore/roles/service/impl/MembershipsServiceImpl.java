@@ -47,30 +47,49 @@ public class MembershipsServiceImpl implements MembershipsService {
 
     @Override
     public Membership assignRoleToMembership(@NonNull Membership membership) {
+        UUID roleId = getRoleIdAndValidate(membership);
+        validate(membership);
+        roleRepository.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException(Role.class, roleId));
+        return membershipRepository.save(membership);
+    }
 
-        UUID roleId = ofNullable(membership.getRole()).map(Role::getId)
+    private UUID getRoleIdAndValidate(Membership membership) {
+        return ofNullable(membership.getRole()).map(Role::getId)
                 .orElseThrow(() -> new InvalidArgumentException(Role.class));
+    }
 
+    private void validate(Membership membership) {
+        validateMembershipDoesNotExist(membership);
+        validateUserExists(membership.getUserId());
+        validateTeamExists(membership.getTeamId());
+        validateUserIsAssignedToMembership(membership);
+    }
+
+    private void validateMembershipDoesNotExist(Membership membership) {
         if (membershipRepository.findByUserIdAndTeamId(membership.getUserId(), membership.getTeamId())
                 .isPresent()) {
             throw new ResourceExistsException(Membership.class);
         }
-        if (ofNullable(usersService.getUser(membership.getUserId()))
-                .isEmpty()) {
-            throw new ResourceNotFoundException(User.class, membership.getUserId());
-        }
-        if (ofNullable(teamsService.getTeam(membership.getTeamId()))
-                .isEmpty()) {
-            throw new ResourceNotFoundException(Team.class, membership.getTeamId());
-        }
+    }
+
+    private void validateUserIsAssignedToMembership(Membership membership) {
         if (teamsService.getTeam(membership.getTeamId())
                 .doesNotHaveMember(membership.getUserId())) {
             throw new UserIsNotAssignedToMembershipException();
         }
+    }
 
-        membership.setRole(roleRepository.findById(roleId)
-                .orElseThrow(() -> new ResourceNotFoundException(Role.class, roleId)));
-        return membershipRepository.save(membership);
+    private void validateTeamExists(UUID teamId) {
+        if (ofNullable(teamsService.getTeam(teamId)).isEmpty()) {
+            throw new ResourceNotFoundException(Team.class, teamId);
+        }
+    }
+
+    private void validateUserExists(UUID userId) {
+        if (ofNullable(usersService.getUser(userId)).isEmpty()) {
+            throw new ResourceNotFoundException(User.class, userId);
+        }
     }
 
     @Override
@@ -80,6 +99,9 @@ public class MembershipsServiceImpl implements MembershipsService {
 
     @Override
     public Optional<Membership> findByUserIdAndTeamId(UUID userId, UUID teamId) {
-        return membershipRepository.findByUserIdAndTeamId(userId, teamId);
+        validateTeamExists(teamId);
+        validateUserExists(userId);
+        return ofNullable(membershipRepository.findByUserIdAndTeamId(userId, teamId))
+                .orElseThrow(() -> new ResourceNotFoundException(Membership.class));
     }
 }
